@@ -205,6 +205,9 @@ module Octopus
 
         val
       end
+    rescue ActiveRecord::StatementInvalid => e
+      select_connection.verify!
+      legacy_method_missing_logic(method, *args, &block)
     end
 
     # Ensure that a single failing slave doesn't take down the entire application
