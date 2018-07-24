@@ -205,10 +205,9 @@ module Octopus
 
         val
       end
-    rescue PG::ConnectionBad => e
-      select_connection.verify!
-      legacy_method_missing_logic(method, *args, &block)
-    rescue ActiveRecord::StatementInvalid => e
+    rescue Exception => e
+      p "Connection was bad, re-verifying"
+      ActiveRecord::Base.connection.verify!
       select_connection.verify!
       legacy_method_missing_logic(method, *args, &block)
     end
