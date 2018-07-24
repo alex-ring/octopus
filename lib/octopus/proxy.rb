@@ -186,30 +186,27 @@ module Octopus
     # and will be removed when Octopus 1.0 will be released.
     # We are planning to migrate to a much stable logic for the Proxy that doesn't require method missing.
     def legacy_method_missing_logic(method, *args, &block)
-      begin
-        if should_clean_connection_proxy?(method)
-          conn = select_connection
-          clean_connection_proxy
-          conn.send(method, *args, &block)
-        elsif should_send_queries_to_shard_slave_group?(method)
-          send_queries_to_shard_slave_group(method, *args, &block)
-        elsif should_send_queries_to_slave_group?(method)
-          send_queries_to_slave_group(method, *args, &block)
-        elsif should_send_queries_to_replicated_databases?(method)
-          send_queries_to_selected_slave(method, *args, &block)
-        else
-          val = select_connection.send(method, *args, &block)
-
-          if val.instance_of? ActiveRecord::Result
-            val.current_shard = shard_name
-          end
-
-          val
-        end
-    rescue => e
-      p "Connection was bad, re-verifying"
       select_connection.verify!
-      legacy_method_missing_logic(method, *args, &block)
+      
+      if should_clean_connection_proxy?(method)
+        conn = select_connection
+        clean_connection_proxy
+        conn.send(method, *args, &block)
+      elsif should_send_queries_to_shard_slave_group?(method)
+        send_queries_to_shard_slave_group(method, *args, &block)
+      elsif should_send_queries_to_slave_group?(method)
+        send_queries_to_slave_group(method, *args, &block)
+      elsif should_send_queries_to_replicated_databases?(method)
+        send_queries_to_selected_slave(method, *args, &block)
+      else
+        val = select_connection.send(method, *args, &block)
+
+        if val.instance_of? ActiveRecord::Result
+          val.current_shard = shard_name
+        end
+
+        val
+      end
     end
 
     # Ensure that a single failing slave doesn't take down the entire application
