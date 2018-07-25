@@ -73,6 +73,7 @@ module Octopus
       if !connection_pool.connected? && shards[Octopus.master_shard].connection.query_cache_enabled
         connection_pool.connection.enable_query_cache!
       end
+      connection_pool.connection.verify!
       connection_pool.connection
     end
 
@@ -186,8 +187,6 @@ module Octopus
     # and will be removed when Octopus 1.0 will be released.
     # We are planning to migrate to a much stable logic for the Proxy that doesn't require method missing.
     def legacy_method_missing_logic(method, *args, &block)
-      select_connection.verify!
-      
       if should_clean_connection_proxy?(method)
         conn = select_connection
         clean_connection_proxy
