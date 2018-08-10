@@ -40,9 +40,11 @@ module Octopus
         clean_connection_proxy if should_clean_connection_proxy?('execute')
         conn.execute(sql, name)
       rescue ActiveRecord::StatementInvalid => e
-        Octopus.logger.error "Octopus.logger.error execute: #{e.message}"
-        conn.verify!
-        retry if (retries += 1) < 3
+        if connection_bad(e.message)
+          Octopus.logger.error "Octopus.logger.error execute: #{e.message}"
+          conn.verify!
+          retry if (retries += 1) < 3
+        end
       end
     end
 
@@ -53,9 +55,11 @@ module Octopus
         clean_connection_proxy if should_clean_connection_proxy?('insert')
         conn.insert(arel, name, pk, id_value, sequence_name, binds)
       rescue ActiveRecord::StatementInvalid => e
-        Octopus.logger.error "Octopus.logger.error insert: #{e.message}"
-        conn.verify!
-        retry if (retries += 1) < 3
+        if connection_bad(e.message)
+          Octopus.logger.error "Octopus.logger.error insert: #{e.message}"
+          conn.verify!
+          retry if (retries += 1) < 3
+        end
       end
     end
 
@@ -67,9 +71,11 @@ module Octopus
         clean_connection_proxy if should_clean_connection_proxy?('insert')
         conn.update(arel, name, binds)
       rescue ActiveRecord::StatementInvalid => e
-        Octopus.logger.error "Octopus.logger.error update: #{e.message}"
-        conn.verify!
-        retry if (retries += 1) < 3
+        if connection_bad(e.message)
+          Octopus.logger.error "Octopus.logger.error update: #{e.message}"
+          conn.verify!
+          retry if (retries += 1) < 3
+        end
       end
     end
 
@@ -149,9 +155,11 @@ module Octopus
           select_connection.transaction(options, &block)
         end
       rescue ActiveRecord::StatementInvalid => e
-        Octopus.logger.error "Octopus.logger.error transaction: #{e.message}"
-        select_connection.verify!
-        retry if (retries += 1) < 3
+        if connection_bad(e.message)
+          Octopus.logger.error "Octopus.logger.error transaction: #{e.message}"
+          select_connection.verify!
+          retry if (retries += 1) < 3
+        end
       end
     end
 
@@ -210,6 +218,10 @@ module Octopus
 
     protected
 
+    def connection_bad(error)
+      error.include? "PG::ConnectionBad"
+    end
+
     # @thiagopradi - This legacy method missing logic will be keep for a while for compatibility
     # and will be removed when Octopus 1.0 will be released.
     # We are planning to migrate to a much stable logic for the Proxy that doesn't require method missing.
@@ -236,9 +248,11 @@ module Octopus
           val
         end
       rescue ActiveRecord::StatementInvalid => e
-        Octopus.logger.error "Octopus.logger.error legacy_method_missing_logic: #{e.message}"
-        select_connection.verify!
-        retry if (retries += 1) < 3
+        if connection_bad(e.message)
+          Octopus.logger.error "Octopus.logger.error legacy_method_missing_logic: #{e.message}"
+          select_connection.verify!
+          retry if (retries += 1) < 3
+        end
       end
     end
 
