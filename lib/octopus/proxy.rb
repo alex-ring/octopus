@@ -44,6 +44,8 @@ module Octopus
           Octopus.logger.error "Octopus.logger.error execute: #{e.message}"
           conn.verify!
           retry if (retries += 1) < 3
+        else
+          raise e.message
         end
       end
     end
@@ -59,6 +61,8 @@ module Octopus
           Octopus.logger.error "Octopus.logger.error insert: #{e.message}"
           conn.verify!
           retry if (retries += 1) < 3
+        else
+          raise e.message
         end
       end
     end
@@ -75,6 +79,8 @@ module Octopus
           Octopus.logger.error "Octopus.logger.error update: #{e.message}"
           conn.verify!
           retry if (retries += 1) < 3
+        else
+          raise e.message
         end
       end
     end
@@ -159,6 +165,8 @@ module Octopus
           Octopus.logger.error "Octopus.logger.error transaction: #{e.message}"
           select_connection.verify!
           retry if (retries += 1) < 3
+        else
+          raise e.message
         end
       end
     end
@@ -252,6 +260,8 @@ module Octopus
           Octopus.logger.error "Octopus.logger.error legacy_method_missing_logic: #{e.message}"
           select_connection.verify!
           retry if (retries += 1) < 3
+        else
+          raise e.message
         end
       end
     end
