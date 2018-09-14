@@ -116,7 +116,18 @@ module Octopus
     def run_queries_on_shard(shard, &_block)
       keeping_connection_proxy(shard) do
         using_shard(shard) do
-          yield
+          begin
+            retries ||= 0
+            yield
+          rescue ActiveRecord::StatementInvalid => e
+            if connection_bad(e.message)
+              Octopus.logger.error "Octopus.logger.error run_queries_on_shard: #{e.message}"
+              select_connection.verify!
+              retry if (retries += 1) < 3
+            else
+              raise e.message
+            end
+          end
         end
       end
     end
